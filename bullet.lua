@@ -1,13 +1,15 @@
 local Bullet = {}
-Bullet.__index = Bullet
 
 function Bullet:new(x, y)
-    local bullet = setmetatable({}, self)
-    bullet.x = x
-    bullet.y = y
-    bullet.speed = 500
-    bullet.radius = 5
-    return bullet
+    local obj = {
+        x = x,
+        y = y,
+        speed = 500,
+        radius = 5
+    }
+    setmetatable(obj, self)
+    self.__index = self
+    return obj
 end
 
 function Bullet:update(dt)
@@ -15,6 +17,7 @@ function Bullet:update(dt)
 end
 
 function Bullet:draw()
+    love.graphics.setColor(255, 255, 255)
     love.graphics.circle("fill", self.x, self.y, self.radius)
 end
 

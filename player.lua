@@ -1,60 +1,66 @@
-local Constants = require("constants")
-local Bullet = require("bullet")
+local Bullet = require("Bullet")
+local Constants = require("Constants")
 
 local Player = {}
-Player.__index = Player
 
 function Player:new()
-    local player = setmetatable({}, self)
-    player.x = love.graphics.getWidth() / 2
-    player.y = love.graphics.getHeight() - 50
-    player.speed = Constants.PLAYER_SPEED
-    player.radius = Constants.PLAYER_RADIUS
-    player.lives = Constants.PLAYER_LIVES
-    player.shootTimer = 0
-    return player
+    local obj = {
+        x = love.graphics.getWidth() / 2,
+        y = love.graphics.getHeight() - 50,
+        radius = 20,
+        speed = 300,
+        shotSpeed = 500,
+        lives = 3,
+        shootTimer = 0
+    }
+    setmetatable(obj, self)
+    self.__index = self
+    return obj
 end
 
 function Player:update(dt)
-    -- Movement
-    self.x = self.x + self.speed * dt
-    if self.x < self.radius then
-        self.x = self.radius
-    elseif self.x > love.graphics.getWidth() - self.radius then
-        self.x = love.graphics.getWidth() - self.radius
+    -- Move player
+    local dx = 0
+    local dy = 0
+    if love.keyboard.isDown("left") then
+        dx = -self.speed * dt
+    elseif love.keyboard.isDown("right") then
+        dx = self.speed * dt
     end
+    if love.keyboard.isDown("up") then
+        dy = -self.speed * dt
+    elseif love.keyboard.isDown("down") then
+        dy = self.speed * dt
+    end
+    self.x = self.x + dx
+    self.y = self.y + dy
 
-    -- Shooting
+    -- Keep player within screen bounds
+    self.x = math.max(self.radius, math.min(love.graphics.getWidth() - self.radius, self.x))
+    self.y = math.max(self.radius, math.min(love.graphics.getHeight() - self.radius, self.y))
+
+    -- Update shoot timer
     self.shootTimer = self.shootTimer - dt
-    if self.shootTimer <= 0 then
-        self.shootTimer = Constants.PLAYER_SHOOT_DELAY
-        self:shoot()
-    end
 end
 
 function Player:draw()
+    love.graphics.setColor(255, 0, 0)
     love.graphics.circle("fill", self.x, self.y, self.radius)
 end
 
-function Player:moveLeft()
-    self.speed = -Constants.PLAYER_SPEED
+function Player:shoot(game)
+    if self.shootTimer <= 0 then
+        local bullet = Bullet:new(self.x, self.y - self.radius)
+        table.insert(game.bullets, bullet)
+        self.shootTimer = 1 / self.shotSpeed
+    end
 end
 
-function Player:moveRight()
-    self.speed = Constants.PLAYER_SPEED
-end
-
-function Player:stopMoving()
-    self.speed = 0
-end
-
-function Player:shoot()
-    local bullet = Bullet:new(self.x, self.y)
-    table.insert(game.bullets, bullet)
-end
-
-function Player:loseLife()
+function Player:loseLife(game)
     self.lives = self.lives - 1
+    if self.lives <= 0 then
+        game.state = Constants.GAME_STATES.GAME_OVER
+    end
 end
 
 function Player:gainLife()
@@ -66,7 +72,7 @@ function Player:increaseSpeed(multiplier)
 end
 
 function Player:increaseShotSpeed(multiplier)
-    Constants.PLAYER_SHOOT_DELAY = Constants.PLAYER_SHOOT_DELAY / multiplier
+    self.shotSpeed = self.shotSpeed * multiplier
 end
 
 return Player

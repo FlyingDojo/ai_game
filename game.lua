@@ -25,7 +25,7 @@ function Game:update(dt)
     if self.state == Constants.GAME_STATES.PLAY then
         if self.player then
             -- Update player
-            self.player:update(dt)
+            self.player:update(dt, self)  -- Pass the game object
         end
 
         -- Update bullets
@@ -127,7 +127,7 @@ function Game:checkCollisions()
             local distance = math.sqrt((enemy.x - self.player.x)^2 + (enemy.y - self.player.y)^2)
             if distance < enemy.radius + self.player.radius then
                 table.remove(self.enemies, i)
-                self.player:loseLife()
+                self.player:loseLife(self)
             end
         end
     end
@@ -177,7 +177,7 @@ end
 
 function Game:playerShoot()
     if self.player then
-        self.player:shoot()
+        self.player:shoot(self)
     end
 end
 
