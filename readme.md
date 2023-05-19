@@ -1,6 +1,6 @@
 A game fully created by OpenAI's ChatGPT, using love2d as the platform, I am coding absolutely nothing and this is only created by the AI with me asking it to add or make it better in some way, e.g. can you make it more OOP, what do you recommend to make this more fun? etc.  Created this out of pure curiosity on chatGPT.
 
-Also there's no guarantee this codes works, i don't debug, i tell the AI the issue and we hash it out that way... however long it takes.
+Also there's no guarantee this codes works all the time, I try to minimise my debugging but sometimes I need to lead the AI down the right path to fix the bug or we will go round in circles.
 
 
 
