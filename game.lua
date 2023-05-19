@@ -47,28 +47,19 @@ function Game:update(dt)
                     self.player:loseLife()
                 end
             end
-
-            -- Check collision with player
-            if self.player and self:checkCollision(enemy, self.player) then
-                table.remove(self.enemies, i)
-                self.player:loseLife()
-            end
         end
 
-        -- Update power-ups
+        -- Update powerups
         for i = #self.powerups, 1, -1 do
             local powerup = self.powerups[i]
             powerup:update(dt)
             if powerup.y > love.graphics.getHeight() + powerup.radius then
                 table.remove(self.powerups, i)
             end
-
-            -- Check collision with player
-            if self.player and self:checkCollision(powerup, self.player) then
-                table.remove(self.powerups, i)
-                self.player:applyPowerup(powerup)
-            end
         end
+
+        -- Check for collisions
+        self:checkCollisions()
 
         -- Spawn enemies
         self.spawnTimer = self.spawnTimer - dt
@@ -77,72 +68,27 @@ function Game:update(dt)
             self.spawnTimer = Constants.SPAWN_DELAY
         end
 
-        -- Spawn power-ups
+        -- Spawn powerups
         self.powerupTimer = self.powerupTimer - dt
         if self.powerupTimer <= 0 then
             self:spawnPowerup()
             self.powerupTimer = Constants.POWERUP_DELAY
         end
-
-        -- Game over condition
-        if self.player and self.player.lives and self.player.lives <= 0 then
-            self.state = Constants.GAME_STATES.GAME_OVER
-        end
     end
 end
 
 function Game:draw()
-    if self.state == Constants.GAME_STATES.PLAY then
-        -- Draw player
-        if self.player then
-            self.player:draw()
-        end
-
-        -- Draw bullets
-        for _, bullet in ipairs(self.bullets) do
-            bullet:draw()
-        end
-
-        -- Draw enemies
-        for _, enemy in ipairs(self.enemies) do
-            enemy:draw()
-        end
-
-        -- Draw power-ups
-        for _, powerup in ipairs(self.powerups) do
-            powerup:draw()
-        end
-
-        -- Draw score
-        love.graphics.print("Score: " .. self.score, 10, 10)
-        if self.player then
-            love.graphics.print("Lives: " .. self.player.lives, 10, 30)
-        end
-    elseif self.state == Constants.GAME_STATES.MENU then
-        -- Draw menu options
-        for i, option in ipairs(self.menuOptions) do
-            if i == self.menuSelection then
-                love.graphics.setColor(0, 1, 0) -- Highlight the selected option
-            else
-                love.graphics.setColor(1, 1, 1)
-            end
-            love.graphics.print(option, 10, 10 + (i - 1) * 20)
-        end
+    if self.state == Constants.GAME_STATES.MENU then
+        self:drawMenu()
+    elseif self.state == Constants.GAME_STATES.PLAY then
+        self:drawGame()
     elseif self.state == Constants.GAME_STATES.GAME_OVER then
-        -- Draw game over message
-        love.graphics.setColor(1, 0, 0)
-        love.graphics.print("Game Over", love.graphics.getWidth() / 2 - 50, love.graphics.getHeight() / 2 - 10)
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.print("Press Enter to Restart", love.graphics.getWidth() / 2 - 85, love.graphics.getHeight() / 2 + 20)
+        self:drawGameOver()
     end
 end
 
 function Game:keyPressed(key)
-    if self.state == Constants.GAME_STATES.PLAY then
-        if self.player then
-            self.player:keyPressed(key)
-        end
-    elseif self.state == Constants.GAME_STATES.MENU then
+    if self.state == Constants.GAME_STATES.MENU then
         if key == "up" then
             self.menuSelection = self.menuSelection - 1
             if self.menuSelection < 1 then
@@ -153,54 +99,70 @@ function Game:keyPressed(key)
             if self.menuSelection > #self.menuOptions then
                 self.menuSelection = 1
             end
-        elseif key == "return" or key == "enter" then
-            self:handleMenuSelection()
+        elseif key == "return" then
+            if self.menuSelection == 1 then
+                self:startGame()
+            elseif self.menuSelection == 2 then
+                -- Show instructions
+            elseif self.menuSelection == 3 then
+                love.event.quit()
+            end
+        end
+    elseif self.state == Constants.GAME_STATES.PLAY then
+        if key == "space" then
+            self:playerShoot()
         end
     elseif self.state == Constants.GAME_STATES.GAME_OVER then
-        if key == "return" or key == "enter" then
+        if key == "return" then
             self:resetGame()
         end
     end
 end
 
-function Game:mousePressed(x, y, button)
-    if self.state == Constants.GAME_STATES.MENU then
-        self:handleMenuSelection()
-    elseif self.state == Constants.GAME_STATES.PLAY then
-        if self.player then
-            self.player:mousePressed(x, y, button)
+function Game:checkCollisions()
+    -- Check collision between player and enemies
+    if self.player then
+        for i = #self.enemies, 1, -1 do
+            local enemy = self.enemies[i]
+            local distance = math.sqrt((enemy.x - self.player.x)^2 + (enemy.y - self.player.y)^2)
+            if distance < enemy.radius + self.player.radius then
+                table.remove(self.enemies, i)
+                self.player:loseLife()
+            end
         end
-    elseif self.state == Constants.GAME_STATES.GAME_OVER then
-        self:resetGame()
     end
-end
 
-function Game:handleMenuSelection()
-    local selection = self.menuOptions[self.menuSelection]
-    if selection == "Start" then
-        self:startGame()
-    elseif selection == "Instructions" then
-        -- Handle instructions
-    elseif selection == "Quit" then
-        love.event.quit()
+    -- Check collision between bullets and enemies
+    for i = #self.bullets, 1, -1 do
+        local bullet = self.bullets[i]
+        for j = #self.enemies, 1, -1 do
+            local enemy = self.enemies[j]
+            local distance = math.sqrt((enemy.x - bullet.x)^2 + (enemy.y - bullet.y)^2)
+            if distance < enemy.radius + bullet.radius then
+                table.remove(self.bullets, i)
+                table.remove(self.enemies, j)
+                self.score = self.score + 1
+            end
+        end
     end
-end
 
-function Game:startGame()
-    self.state = Constants.GAME_STATES.PLAY
-    self.player = Player:new()
-    self.score = 0
-end
-
-function Game:resetGame()
-    self.state = Constants.GAME_STATES.MENU
-    self.player = nil
-    self.enemies = {}
-    self.bullets = {}
-    self.powerups = {}
-    self.spawnTimer = Constants.SPAWN_DELAY
-    self.powerupTimer = Constants.POWERUP_DELAY
-    self.menuSelection = 1
+    -- Check collision between player and powerups
+    if self.player then
+        for i = #self.powerups, 1, -1 do
+            local powerup = self.powerups[i]
+            local distance = math.sqrt((powerup.x - self.player.x)^2 + (powerup.y - self.player.y)^2)
+            if distance < powerup.radius + self.player.radius then
+                table.remove(self.powerups, i)
+                if powerup.type == Constants.POWERUP_TYPES.LIFE then
+                    self.player:gainLife()
+                elseif powerup.type == Constants.POWERUP_TYPES.SPEED then
+                    self.player:increaseSpeed(Constants.POWERUP_SPEED_MULTIPLIER)
+                elseif powerup.type == Constants.POWERUP_TYPES.SHOT_SPEED then
+                    self.player:increaseShotSpeed(Constants.POWERUP_SHOT_SPEED_MULTIPLIER)
+                end
+            end
+        end
+    end
 end
 
 function Game:spawnEnemy()
@@ -213,14 +175,78 @@ function Game:spawnPowerup()
     table.insert(self.powerups, powerup)
 end
 
-function Game:checkCollision(obj1, obj2)
-    if not obj1 or not obj2 then
-        return false
+function Game:playerShoot()
+    if self.player then
+        self.player:shoot()
     end
-    local dx = obj1.x - obj2.x
-    local dy = obj1.y - obj2.y
-    local distance = math.sqrt(dx * dx + dy * dy)
-    return distance < obj1.radius + obj2.radius
+end
+
+function Game:startGame()
+    self.state = Constants.GAME_STATES.PLAY
+    self.score = 0
+    self.player = Player:new()
+end
+
+function Game:resetGame()
+    self.state = Constants.GAME_STATES.MENU
+    self.menuSelection = 1
+    self.score = 0
+    self.player = nil
+    self.enemies = {}
+    self.bullets = {}
+    self.powerups = {}
+    self.spawnTimer = Constants.SPAWN_DELAY
+    self.powerupTimer = Constants.POWERUP_DELAY
+end
+
+function Game:drawMenu()
+    -- Draw menu options
+    love.graphics.setFont(Constants.FONT_MEDIUM)
+    for i, option in ipairs(self.menuOptions) do
+        if i == self.menuSelection then
+            love.graphics.setColor(255, 255, 0)
+        else
+            love.graphics.setColor(255, 255, 255)
+        end
+        love.graphics.printf(option, 0, love.graphics.getHeight() / 2 + (i - 1) * 30, love.graphics.getWidth(), "center")
+    end
+end
+
+function Game:drawGame()
+    -- Draw score
+    love.graphics.setFont(Constants.FONT_SMALL)
+    love.graphics.setColor(255, 255, 255)
+    love.graphics.print("Score: " .. self.score, 10, 10)
+
+    -- Draw player
+    if self.player then
+        self.player:draw()
+    end
+
+    -- Draw bullets
+    for _, bullet in ipairs(self.bullets) do
+        bullet:draw()
+    end
+
+    -- Draw enemies
+    for _, enemy in ipairs(self.enemies) do
+        enemy:draw()
+    end
+
+    -- Draw powerups
+    for _, powerup in ipairs(self.powerups) do
+        powerup:draw()
+    end
+end
+
+function Game:drawGameOver()
+    love.graphics.setFont(Constants.FONT_LARGE)
+    love.graphics.setColor(255, 255, 255)
+    love.graphics.printf("Game Over", 0, love.graphics.getHeight() / 2 - 50, love.graphics.getWidth(), "center")
+
+    love.graphics.setFont(Constants.FONT_MEDIUM)
+    love.graphics.printf("Score: " .. self.score, 0, love.graphics.getHeight() / 2 + 50, love.graphics.getWidth(), "center")
+    love.graphics.printf("Press Enter to Restart", 0, love.graphics.getHeight() / 2 + 100, love.graphics.getWidth(), "center")
 end
 
 return Game

@@ -1,94 +1,72 @@
-local Constants = require "constants"
+local Constants = require("constants")
+local Bullet = require("bullet")
 
 local Player = {}
+Player.__index = Player
 
 function Player:new()
-    local player = {
-        x = love.graphics.getWidth() / 2,
-        y = love.graphics.getHeight() - 50,
-        width = 20,
-        height = 20,
-        speed = 300,
-        bullets = {},
-        fireRate = 0.2,
-        fireTimer = 0,
-        radius = 10,
-        lives = 3
-    }
-    setmetatable(player, self)
-    self.__index = self
+    local player = setmetatable({}, self)
+    player.x = love.graphics.getWidth() / 2
+    player.y = love.graphics.getHeight() - 50
+    player.speed = Constants.PLAYER_SPEED
+    player.radius = Constants.PLAYER_RADIUS
+    player.lives = Constants.PLAYER_LIVES
+    player.shootTimer = 0
     return player
 end
 
 function Player:update(dt)
-    self:move(dt)
-    self:fire(dt)
-    self:updateBullets(dt)
-end
-
-function Player:move(dt)
-    local dx = 0
-    local dy = 0
-
-    if love.keyboard.isDown("left") then
-        dx = -1
-    elseif love.keyboard.isDown("right") then
-        dx = 1
+    -- Movement
+    self.x = self.x + self.speed * dt
+    if self.x < self.radius then
+        self.x = self.radius
+    elseif self.x > love.graphics.getWidth() - self.radius then
+        self.x = love.graphics.getWidth() - self.radius
     end
 
-    if love.keyboard.isDown("up") then
-        dy = -1
-    elseif love.keyboard.isDown("down") then
-        dy = 1
-    end
-
-    local magnitude = math.sqrt(dx * dx + dy * dy)
-    if magnitude ~= 0 then
-        dx = dx / magnitude
-        dy = dy / magnitude
-    end
-
-    self.x = self.x + dx * self.speed * dt
-    self.y = self.y + dy * self.speed * dt
-
-    -- Keep the player within the game window
-    self.x = math.max(0, math.min(self.x, love.graphics.getWidth()))
-    self.y = math.max(0, math.min(self.y, love.graphics.getHeight()))
-end
-
-function Player:fire(dt)
-    self.fireTimer = self.fireTimer + dt
-
-    if self.fireTimer >= self.fireRate and love.keyboard.isDown("space") then
-        self.fireTimer = 0
-        local bullet = {
-            x = self.x,
-            y = self.y - self.radius,
-            width = 2,
-            height = 10,
-            speed = 500
-        }
-        table.insert(self.bullets, bullet)
-    end
-end
-
-function Player:updateBullets(dt)
-    for i, bullet in ipairs(self.bullets) do
-        bullet.y = bullet.y - bullet.speed * dt
-        if bullet.y < 0 then
-            table.remove(self.bullets, i)
-        end
+    -- Shooting
+    self.shootTimer = self.shootTimer - dt
+    if self.shootTimer <= 0 then
+        self.shootTimer = Constants.PLAYER_SHOOT_DELAY
+        self:shoot()
     end
 end
 
 function Player:draw()
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.rectangle("fill", self.x - self.width / 2, self.y - self.height / 2, self.width, self.height)
+    love.graphics.circle("fill", self.x, self.y, self.radius)
+end
 
-    love.graphics.setColor(1, 0, 0)
-    for _, bullet in ipairs(self.bullets) do
-        love.graphics.rectangle("fill", bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height)
-    end
+function Player:moveLeft()
+    self.speed = -Constants.PLAYER_SPEED
+end
+
+function Player:moveRight()
+    self.speed = Constants.PLAYER_SPEED
+end
+
+function Player:stopMoving()
+    self.speed = 0
+end
+
+function Player:shoot()
+    local bullet = Bullet:new(self.x, self.y)
+    table.insert(game.bullets, bullet)
+end
+
+function Player:loseLife()
+    self.lives = self.lives - 1
+end
+
+function Player:gainLife()
+    self.lives = self.lives + 1
+end
+
+function Player:increaseSpeed(multiplier)
+    self.speed = self.speed * multiplier
+end
+
+function Player:increaseShotSpeed(multiplier)
+    Constants.PLAYER_SHOOT_DELAY = Constants.PLAYER_SHOOT_DELAY / multiplier
 end
 
 return Player
