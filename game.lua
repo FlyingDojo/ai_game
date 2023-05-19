@@ -137,7 +137,7 @@ function Game:draw()
     end
 end
 
-function Game:keypressed(key)
+function Game:keyPressed(key)
     if self.state == Constants.GAME_STATES.PLAY then
         if self.player then
             self.player:keyPressed(key)
@@ -163,7 +163,7 @@ function Game:keypressed(key)
     end
 end
 
-function Game:mousepressed(x, y, button)
+function Game:mousePressed(x, y, button)
     if self.state == Constants.GAME_STATES.MENU then
         self:handleMenuSelection()
     elseif self.state == Constants.GAME_STATES.PLAY then
