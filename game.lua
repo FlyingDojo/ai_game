@@ -23,8 +23,10 @@ end
 
 function Game:update(dt)
     if self.state == Constants.GAME_STATES.PLAY then
-        -- Update player
-        self.player:update(dt)
+        if self.player then
+            -- Update player
+            self.player:update(dt)
+        end
 
         -- Update bullets
         for i = #self.bullets, 1, -1 do
@@ -41,11 +43,13 @@ function Game:update(dt)
             enemy:update(dt)
             if enemy.y > love.graphics.getHeight() + enemy.radius then
                 table.remove(self.enemies, i)
-                self.player:loseLife()
+                if self.player then
+                    self.player:loseLife()
+                end
             end
 
             -- Check collision with player
-            if self:checkCollision(enemy, self.player) then
+            if self.player and self:checkCollision(enemy, self.player) then
                 table.remove(self.enemies, i)
                 self.player:loseLife()
             end
@@ -60,7 +64,7 @@ function Game:update(dt)
             end
 
             -- Check collision with player
-            if self:checkCollision(powerup, self.player) then
+            if self.player and self:checkCollision(powerup, self.player) then
                 table.remove(self.powerups, i)
                 self.player:applyPowerup(powerup)
             end
@@ -81,7 +85,7 @@ function Game:update(dt)
         end
 
         -- Game over condition
-        if self.player.lives <= 0 then
+        if self.player and self.player.lives <= 0 then
             self.state = Constants.GAME_STATES.GAME_OVER
         end
     end
@@ -90,7 +94,9 @@ end
 function Game:draw()
     if self.state == Constants.GAME_STATES.PLAY then
         -- Draw player
-        self.player:draw()
+        if self.player then
+            self.player:draw()
+        end
 
         -- Draw bullets
         for _, bullet in ipairs(self.bullets) do
@@ -109,7 +115,9 @@ function Game:draw()
 
         -- Draw score
         love.graphics.print("Score: " .. self.score, 10, 10)
-        love.graphics.print("Lives: " .. self.player.lives, 10, 30)
+        if self.player then
+            love.graphics.print("Lives: " .. self.player.lives, 10, 30)
+        end
     elseif self.state == Constants.GAME_STATES.MENU then
         -- Draw menu options
         for i, option in ipairs(self.menuOptions) do
@@ -129,8 +137,12 @@ function Game:draw()
     end
 end
 
-function Game:keyPressed(key)
-    if self.state == Constants.GAME_STATES.MENU then
+function Game:keypressed(key)
+    if self.state == Constants.GAME_STATES.PLAY then
+        if self.player then
+            self.player:keypressed(key)
+        end
+    elseif self.state == Constants.GAME_STATES.MENU then
         if key == "up" then
             self.menuSelection = self.menuSelection - 1
             if self.menuSelection < 1 then
@@ -144,8 +156,6 @@ function Game:keyPressed(key)
         elseif key == "return" or key == "enter" then
             self:handleMenuSelection()
         end
-    elseif self.state == Constants.GAME_STATES.PLAY then
-        self.player:keyPressed(key)
     elseif self.state == Constants.GAME_STATES.GAME_OVER then
         if key == "return" or key == "enter" then
             self:resetGame()
@@ -153,11 +163,13 @@ function Game:keyPressed(key)
     end
 end
 
-function Game:mousePressed(x, y, button)
+function Game:mousepressed(x, y, button)
     if self.state == Constants.GAME_STATES.MENU then
         self:handleMenuSelection()
     elseif self.state == Constants.GAME_STATES.PLAY then
-        self.player:mousePressed(x, y, button)
+        if self.player then
+            self.player:mousepressed(x, y, button)
+        end
     elseif self.state == Constants.GAME_STATES.GAME_OVER then
         self:resetGame()
     end
@@ -202,6 +214,9 @@ function Game:spawnPowerup()
 end
 
 function Game:checkCollision(obj1, obj2)
+    if not obj1 or not obj2 then
+        return false
+    end
     local dx = obj1.x - obj2.x
     local dy = obj1.y - obj2.y
     local distance = math.sqrt(dx * dx + dy * dy)
