@@ -85,7 +85,7 @@ function Game:update(dt)
         end
 
         -- Game over condition
-        if self.player and self.player.lives <= 0 then
+        if self.player and self.player.lives and self.player.lives <= 0 then
             self.state = Constants.GAME_STATES.GAME_OVER
         end
     end
