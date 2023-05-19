@@ -1,26 +1,25 @@
-local constants = {}
+local Constants = {
+    PLAYER_SPEED = 400,
+    PLAYER_RADIUS = 20,
+    PLAYER_LIVES = 3,
+    PLAYER_SHOOT_DELAY = 0.5,
 
-constants.SCREEN_WIDTH = 800
-constants.SCREEN_HEIGHT = 600
+    SPAWN_DELAY = 1.5,
 
-constants.GAME_STATES = {
-    MENU = 0,
-    PLAY = 1,
-    PAUSE = 2
+    POWERUP_DELAY = 5,
+    POWERUP_TYPES = {
+        LIFE = "life",
+        SPEED = "speed",
+        SHOT_SPEED = "shot_speed"
+    },
+    POWERUP_SPEED_MULTIPLIER = 1.5,
+    POWERUP_SHOT_SPEED_MULTIPLIER = 0.5,
+
+    GAME_STATES = {
+        MENU = "menu",
+        PLAY = "play",
+        GAME_OVER = "game_over"
+    }
 }
 
-constants.BACKGROUND_COLOR = {0, 0, 0}
-
-constants.BULLET_WIDTH = 5
-constants.BULLET_HEIGHT = 10
-constants.BULLET_COLOR = {255, 255, 255}
-constants.BULLET_SPEED = 500
-
-constants.ENEMY_WIDTH = 30
-constants.ENEMY_HEIGHT = 30
-constants.ENEMY_COLOR = {255, 255, 255}
-constants.ENEMY_FLASH_COLOR = {255, 0, 0}
-constants.ENEMY_FLASH_TIME = 0.1
-constants.ENEMY_SPAWN_RATE = 2 -- Adjust this value to change how frequently enemies spawn
-
-return constants
+return Constants
