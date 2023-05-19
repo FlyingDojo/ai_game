@@ -12,7 +12,8 @@ function Player:new()
         bullets = {},
         fireRate = 0.2,
         fireTimer = 0,
-        radius = 10
+        radius = 10,
+        lives = 3
     }
     setmetatable(player, self)
     self.__index = self
