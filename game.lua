@@ -140,7 +140,7 @@ end
 function Game:keypressed(key)
     if self.state == Constants.GAME_STATES.PLAY then
         if self.player then
-            self.player:keypressed(key)
+            self.player:keyPressed(key)
         end
     elseif self.state == Constants.GAME_STATES.MENU then
         if key == "up" then
@@ -168,7 +168,7 @@ function Game:mousepressed(x, y, button)
         self:handleMenuSelection()
     elseif self.state == Constants.GAME_STATES.PLAY then
         if self.player then
-            self.player:mousepressed(x, y, button)
+            self.player:mousePressed(x, y, button)
         end
     elseif self.state == Constants.GAME_STATES.GAME_OVER then
         self:resetGame()
