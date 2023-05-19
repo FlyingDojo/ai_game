@@ -22,4 +22,9 @@ local Constants = {
     }
 }
 
+-- Font settings
+Constants.FONT_SMALL = love.graphics.newFont(12)
+Constants.FONT_MEDIUM = love.graphics.newFont(24)
+Constants.FONT_LARGE = love.graphics.newFont(36)
+
 return Constants
